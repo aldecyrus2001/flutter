@@ -50,6 +50,7 @@ dependencies:
   qr_flutter: ^4.1.0
   intl_utils: ^2.8.7
   syncfusion_flutter_charts: ^27.1.58
+  quickalert: ^1.1.0
 
 
 dev_dependencies:

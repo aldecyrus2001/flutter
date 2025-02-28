@@ -12,9 +12,7 @@ import 'authentication.dart';
 class QRScanner extends StatefulWidget {
   final bool isForLogin;
 
-  final VoidCallback onScanComplete;
-
-  const QRScanner({super.key, required this.isForLogin, required this.onScanComplete});
+  const QRScanner({super.key, required this.isForLogin});
 
   @override
   State<QRScanner> createState() => _QRScannerState();
@@ -66,7 +64,7 @@ class _QRScannerState extends State<QRScanner> {
         //
         // login_QR_Face.Login_QR_Face(context, code);
 
-        _imgFromCamera(code);
+        Navigator.pop(context, code);
 
         print(code);
       } else {
@@ -75,62 +73,6 @@ class _QRScannerState extends State<QRScanner> {
     }
 
   }
-
-  final picker = ImagePicker();
-
-  Future<void> _imgFromCamera(code) async {
-    try {
-
-      print("Starting image capture for verification...");
-
-      // Capture image from the camera
-      final pickedFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 50);
-
-      if (pickedFile != null) {
-        // Send the captured image to the server
-        final request = https.MultipartRequest('POST', Facial_Recognition);
-        request.files.add(await https.MultipartFile.fromPath('image', pickedFile.path));
-
-        final response = await request.send();
-
-        if (response.statusCode == 200) {
-          final responseBody = await response.stream.bytesToString();
-          final decodedResponse = json.decode(responseBody);
-
-          final imageName = decodedResponse['message'];
-
-          if (imageName == code) {
-            // If the image name matches the scanned QR code, proceed to login
-            QR_Face login_QR_Face = QR_Face();
-            login_QR_Face.Login_QR_Face(context, imageName);
-          } else {
-            // Display error if the image doesn't match
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('The Uploaded Image Is Not Face, Please Upload Again!')),
-            );
-          }
-        } else {
-          // Handle authentication failure
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Authentication Failed, Please Try Again!')),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("No image captured.")),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error capturing image from camera: $e")),
-      );
-    } finally {
-      widget.onScanComplete(); // Call the callback here
-    }
-  }
-
-
-
 
   void _screenWasClosed() {
     _screenOpened = false;

@@ -9,7 +9,7 @@ import 'package:http/http.dart' as https;
 import '../components/Bottom_Sheets/alert.dart';
 
 
-addCandidates(BuildContext context, String position, String platform) async {
+addCandidates(BuildContext context, String position, String platform, String Partylist) async {
   try {
     String? userID = UserData().getuserID();
 
@@ -20,11 +20,12 @@ addCandidates(BuildContext context, String position, String platform) async {
           'userID': userID,
           'position': position,
           'platform': platform,
+          'partylist': Partylist,
         },
       );
 
       var data = json.decode(response.body);
-      print(data); // You should see something like {'statusCode': 409, 'msg': 'User ID already exists'}
+      print(data);
 
       // Check if response is not empty and contains the statusCode
       if (data.containsKey('statusCode')) {

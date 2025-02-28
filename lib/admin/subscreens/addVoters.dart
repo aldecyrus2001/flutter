@@ -227,7 +227,7 @@ class _addVotersScreenState extends State<addVotersScreen> {
                       final scannedId = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => QRScanner(isForLogin: false, onScanComplete: _onScanComplete),
+                          builder: (context) => QRScanner(isForLogin: false),
                         ),
                       );
 

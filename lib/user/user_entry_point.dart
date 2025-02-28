@@ -33,13 +33,12 @@ class _UserEntryPointState extends State<UserEntryPoint>
   void initState() {
     super.initState();
     fetchSechedule();
-
-
   }
 
   Future<void> fetchSechedule() async {
     try {
       final response = await http.get(fetchSched);
+
 
       if (response.statusCode == 200) {
         // Decode the JSON response
@@ -50,7 +49,6 @@ class _UserEntryPointState extends State<UserEntryPoint>
             .map((scheduleJson) => Schedule.fromJson(scheduleJson))
             .toList();
 
-        // Now you have the schedules list available
         checkFilingSchedule(schedules);
       } else {
         print("Failed to load schedule, Status Code: ${response.statusCode}");
@@ -74,10 +72,11 @@ class _UserEntryPointState extends State<UserEntryPoint>
       DateTime schedEnd = DateTime.parse(filingSchedule.schedEnd);
 
       // Check if the Filing of Candidacy is ongoing or ended
-      if (currentDate.isBefore(schedEnd)) {
-
+      if (currentDate.isBefore(schedEnd) && currentDate.isAfter(schedStart)) {
+        showDialog(context: context, builder: (BuildContext context) {
+          return AnnouncementDialog();
+        });
       } else {
-        // Now check the Vote Time schedule after Filing ends
         checkVotingSchedule(schedules);
       }
     } else {
@@ -88,7 +87,6 @@ class _UserEntryPointState extends State<UserEntryPoint>
   void checkVotingSchedule(List<Schedule> schedules) {
     DateTime currentDate = DateTime.now();
 
-    // Find the Vote Time schedule
     Schedule voteSchedule = schedules.firstWhere(
           (schedule) => schedule.schedTitle == "Vote Time",
       orElse: () => Schedule(schedID: -1, schedTitle: '', schedStart: '', schedEnd: ''),
@@ -98,14 +96,8 @@ class _UserEntryPointState extends State<UserEntryPoint>
       DateTime schedStart = DateTime.parse(voteSchedule.schedStart);
       DateTime schedEnd = DateTime.parse(voteSchedule.schedEnd);
 
-      // Check if the Vote Time has started or is ongoing
-      if (currentDate.isBefore(schedStart)) {
-        showDialog(context: context, builder: (BuildContext context) {
-          // return SetServer();
-          return AnnouncementDialog();
-        });
-      } else if (currentDate.isBefore(schedEnd)) {
-        print('Vote Time is ongoing.');
+      if (currentDate.isBefore(schedEnd)) {
+
       } else {
         showDialog(context: context, builder: (BuildContext context) {
           // return SetServer();

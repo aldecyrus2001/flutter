@@ -42,7 +42,6 @@ class _CandidateApplicationState extends State<CandidateApplication> {
         if (fetchedData is List) {
           setState(() {
             positions = fetchedData.map((data) => Position.fromJson(data)).toList();
-            // Fetch candidates for the first position if available
             if (positions.isNotEmpty) {
               fetchCandidatesForPosition(positions[0].positionTitle);
             }

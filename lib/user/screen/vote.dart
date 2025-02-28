@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:voting_system/user/classes/userClass.dart';
+import 'package:voting_system/user/components/userAppbar.dart';
 
 import '../../assets/global/global.dart';
 import '../../assets/global/global_variable.dart';
@@ -15,7 +17,9 @@ class VoteBallot extends StatefulWidget {
 }
 
 class _VoteBallotState extends State<VoteBallot> {
-  String userID = '123432';
+
+  UserData userData = UserData();
+
   // Store the positions fetched from the server
   List<Map<String, dynamic>> positions = [];
 
@@ -138,30 +142,7 @@ class _VoteBallotState extends State<VoteBallot> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(.2),
-      appBar: AppBar(
-        backgroundColor: backgroundColor,
-        elevation: 0,
-        leading: Container(),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              adminEmail ?? 'No Email Provided',
-              style: const TextStyle(color: Colors.white),
-            ),
-            const SizedBox(width: 10),
-            CircleAvatar(
-              backgroundColor: Colors.white24,
-              child: ClipOval(
-                child: const Icon(
-                  CupertinoIcons.person,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      appBar: Userappbar(),
       body: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -239,7 +220,7 @@ class _VoteBallotState extends State<VoteBallot> {
             right: 16,
             child: ElevatedButton(
               onPressed: () {
-                print(userID);
+                print(userData.getuserID());
 
                 // Flatten all selected candidates into a list
                 List<String?> allSelectedCandidates = [];
@@ -269,7 +250,7 @@ class _VoteBallotState extends State<VoteBallot> {
                     ),
                   );
                 } else {
-                  _SubmitVote(userID, selectedCandidates);
+                  _SubmitVote(userData.getuserID()!, selectedCandidates);
                 }
               },
               style: ElevatedButton.styleFrom(

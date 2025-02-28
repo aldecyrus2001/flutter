@@ -1,7 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:voting_system/admin/admin_entry_point.dart';
+import 'package:voting_system/admin/screen/adminDashboard.dart';
+import 'package:voting_system/admin/screen/rating.dart';
+import 'package:voting_system/admin/screen/settings.dart';
 import 'package:voting_system/login/login.dart';
+import 'package:voting_system/user/components/Bottom_Sheets/application_form.dart';
 import 'package:voting_system/user/screen/userDashboard.dart';
 import 'package:voting_system/user/user_entry_point.dart';
 
@@ -39,8 +44,9 @@ class MyApp extends StatelessWidget {
           errorBorder: defaultInputBorder,
         ),
       ),
-      // home: const LoginScreen(),
-      home: const UserEntryPoint(initialScreen: userHomeScreen()),
+      home: const LoginScreen(),
+      // home: UserEntryPoint(initialScreen: userHomeScreen()),
+
     );
   }
 }

@@ -1,12 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:voting_system/global/model/my_partylist.dart';
 import 'package:voting_system/user/Service/addCandidate.dart';
 import 'dart:convert';
 
 import '../../../admin/services/fetchPositions.dart';
-import '../../../assets/global/global.dart';
-import '../../../global/model/my_position.dart';
-import '../../classes/userClass.dart';
 
 
 import 'alert.dart';
@@ -17,8 +15,15 @@ class ApplicationFormPage extends StatefulWidget {
 }
 
 class _ApplicationFormPageState extends State<ApplicationFormPage> {
+  String selectedPartylist = '';
+  List<PartyList> partyLists = [];
+  bool isLoading = true;
+  bool showPlatformTextField = false;
+  bool showPartyListController = true;
+
   final TextEditingController platformController = TextEditingController();
   final TextEditingController selectedPosition = TextEditingController();
+  final TextEditingController partylistController = TextEditingController();
   List<String> positionList = [];
 
   String Selected = '';
@@ -26,35 +31,73 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
   @override
   void initState() {
     super.initState();
-    // Fetch positions when the widget is initialized
+    fetchPosition();
+    fetchPartyListData();
+  }
+
+  void fetchPosition() {
     fetchPositions(
-      (fetchedPositions) {
+          (fetchedPositions) {
         setState(() {
-          positionList = fetchedPositions
-              .map((position) => position.positionTitle)
-              .toList();
-          print(
-              "Position Titles List: $positionList"); // Print position titles list
+          positionList = fetchedPositions.map((position) => position.positionTitle).toList();
         });
       },
-      (errorMessage) {
-        print("Error Callback: $errorMessage"); // Print any error messages
+          (errorMessage) {
+        print("Error Callback: $errorMessage");
       },
     );
   }
+
+
+  void fetchPartyListData() async {
+    try {
+      PartyListService partyListService = PartyListService();
+      List<PartyList> fetchedPartyLists = await partyListService.fetchPartylist();
+
+      // Add N/A option
+      fetchedPartyLists.insert(
+        0,
+        PartyList(
+          id: '0',
+          image: '',
+          title: 'N/A',
+          platform: 'No platform available', // Optional placeholder platform
+        ),
+      );
+
+      setState(() {
+        partyLists = fetchedPartyLists;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching party list: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Candidate Application"),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Dropdown for selecting position
+
             positionList.isEmpty
                 ? CircularProgressIndicator()
                 : DropdownButtonFormField<String>(
@@ -67,7 +110,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
               }).toList(),
               onChanged: (String? newValue) {
                 setState(() {
-                  Selected = newValue ?? ''; // Update selected position
+                  Selected = newValue ?? '';
                   selectedPosition.text = Selected;
                 });
               },
@@ -78,16 +121,63 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
               ),
             ),
             SizedBox(height: 15),
-            // TextField for inputting platform/missions
-            TextField(
-              controller: platformController,
-              maxLines: 3,
+            isLoading
+                ? Center(child: CircularProgressIndicator())
+                : DropdownButtonFormField<String>(
+              value: selectedPartylist.isNotEmpty ? selectedPartylist : null,
+              items: partyLists.map((partyList) {
+                return DropdownMenuItem(
+                  value: partyList.id,
+                  child: Text(partyList.title),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedPartylist = newValue ?? '';
+
+                  if (selectedPartylist == '0') {
+                    partylistController.text = '';
+                    showPlatformTextField = true;
+                    showPartyListController = false;
+                  } else {
+                    final selectedParty = partyLists.firstWhere(
+                          (party) => party.id == selectedPartylist,
+                      orElse: () => PartyList(id: '', image: '', title: '', platform: ''),
+                    );
+                    partylistController.text = selectedParty.platform;
+                    showPlatformTextField = false;
+                    showPartyListController = true;
+                  }
+                });
+              },
               decoration: InputDecoration(
-                labelText: "Enter your platform/missions",
                 fillColor: Colors.white,
+                labelText: 'Select Partylist',
                 border: OutlineInputBorder(),
               ),
             ),
+            SizedBox(height: 15),
+            if (showPartyListController)
+              TextField(
+                controller: partylistController,
+                maxLines: 3,
+                enabled: false,
+                decoration: InputDecoration(
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            SizedBox(height: 15),
+            if (showPlatformTextField)
+              TextField(
+                controller: platformController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: "Enter your platform/missions",
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(),
+                ),
+              ),
             SizedBox(height: 15),
             // Submit Button
             Row(
@@ -95,8 +185,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
               children: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context)
-                        .pop(); // Close the page without saving
+                    Navigator.of(context).pop();
                   },
                   child: Text('Cancel'),
                 ),
@@ -104,10 +193,11 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
                   onPressed: () async {
                     String platformText = platformController.text;
 
-                    if (Selected.isNotEmpty && platformText.isNotEmpty) {
+                    if (Selected.isNotEmpty) {
 
                       // Call addCandidates with the selected position and platform
-                      addCandidates(context, Selected, platformText);
+                      addCandidates(context, Selected, platformText, selectedPartylist);
+
 
                       platformController.clear();
                       setState(() {

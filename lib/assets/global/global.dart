@@ -32,6 +32,10 @@ var FetchPartyList = BaseUrl.replace(queryParameters: {"action": "FetchPartyList
 var ShowPartylist = BaseUrl.replace(queryParameters: {"action": "ShowPartylist"});
 var fetchCandidateForVote = BaseUrl.replace(queryParameters: {"action": "fetchCandidatesForVote"});
 var submitVote = BaseUrl.replace(queryParameters: {"action": "SubmitVote"});
+var UpdateMaxCount = BaseUrl.replace(queryParameters: {"action": "updateMaxCount"});
+var fetchResultPerCourse = BaseUrl.replace(queryParameters: {"action": "fetchResultPerCourse"});
+var fetchCourse = BaseUrl.replace(queryParameters: {"action": "fetchCourses"});
+var fetchRatings = BaseUrl.replace(queryParameters: {"action": "fetchRatings"});
 
 
 // Python

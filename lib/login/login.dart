@@ -16,6 +16,7 @@ import 'package:voting_system/user/components/Bottom_Sheets/setServer.dart';
 
 import '../assets/global/global.dart';
 import 'Services/qr_scanner.dart';
+import 'package:quickalert/quickalert.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,7 +42,8 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(  // Wrap the content with SingleChildScrollView
+            SingleChildScrollView(
+              // Wrap the content with SingleChildScrollView
               child: Column(
                 children: [
                   SizedBox(
@@ -57,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textEditingController: passwordController,
                     hintText: "Enter Your Password",
                     icon: Icons.lock,
-                    isPass: true,  // Hides the text as the user types
+                    isPass: true, // Hides the text as the user types
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 35),
@@ -97,14 +99,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             MaterialPageRoute(
                               builder: (context) => QRScanner(
                                 isForLogin: true,
-                                onScanComplete: _onScanComplete, // Pass callback here
                               ),
                             ),
                           );
-
-                          setState(() {
-                            isLoading = false;
-                          });
+                          if (scannedId != null) {
+                            setState(() {
+                              isLoading = true;
+                            });
+                            _imgFromCamera(scannedId);
+                          } else {
+                            setState(() {
+                              isLoading = false;
+                            });
+                          }
                         },
                         child: Image.asset(
                           "lib/assets/icons/qr-code.png",
@@ -112,29 +119,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 50,
                         ),
                       ),
-                      // const SizedBox(width: 20),
-                      // GestureDetector(
-                      //   onTap: () async {
-                      //     if (Platform.isAndroid) {
-                      //       PermissionStatus cameraPermission = await Permission.camera.request();
-                      //
-                      //       if (cameraPermission.isGranted) {
-                      //         _imgFromCamera();
-                      //       }
-                      //       else {
-                      //         ScaffoldMessenger.of(context).showSnackBar(
-                      //           const SnackBar(
-                      //               content: Text("Camera permission denied")),
-                      //         );
-                      //       }
-                      //     }
-                      //   },
-                      //   child: Image.asset(
-                      //     "lib/assets/icons/electronics.png",
-                      //     width: 50,
-                      //     height: 50,
-                      //   ),
-                      // ),
                     ],
                   ),
                   SizedBox(
@@ -145,12 +129,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       showDialog(context: context, builder: (BuildContext context) {
                         return SetServer();
                       });
+
+                      // QuickAlert.show(
+                      //     context: context,
+                      //     type: QuickAlertType.success,
+                      //     text: "Transaction Completed Successfully");
                     },
                     child: Text(
                       "Set Ipaddress",
                       style: TextStyle(
-                        color: Colors.blue, // Optional: change text color to indicate it's clickable
-                        decoration: TextDecoration.underline, // Optional: underline text
+                        color: Colors
+                            .blue, // Optional: change text color to indicate it's clickable
+                        decoration: TextDecoration
+                            .underline, // Optional: underline text
                       ),
                     ),
                   )
@@ -167,13 +158,57 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  final picker = ImagePicker();
 
+  Future<void> _imgFromCamera(code) async {
+    try {
+      print("Starting image capture for verification...");
 
+      // Capture image from the camera
+      final pickedFile =
+          await picker.pickImage(source: ImageSource.camera, imageQuality: 50);
 
-  void _onScanComplete() {
-    setState(() {
-      isLoading = false;  // Set loading state to false after scan is complete
-    });
+      if (pickedFile != null) {
+        // Send the captured image to the server
+        final request = http.MultipartRequest('POST', Facial_Recognition);
+        request.files
+            .add(await http.MultipartFile.fromPath('image', pickedFile.path));
+
+        final response = await request.send();
+
+        if (response.statusCode == 200) {
+          final responseBody = await response.stream.bytesToString();
+          final decodedResponse = json.decode(responseBody);
+
+          final imageName = decodedResponse['message'];
+
+          if (imageName == code) {
+            // If the image name matches the scanned QR code, proceed to login
+            QR_Face login_QR_Face = QR_Face();
+            login_QR_Face.Login_QR_Face(context, imageName);
+          } else {
+            // Display error if the image doesn't match
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      'The Uploaded Image Is Not Face, Please Upload Again!')),
+            );
+          }
+        } else {
+          // Handle authentication failure
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Authentication Failed, Please Try Again!')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No image captured.")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error capturing image from camera: $e")),
+      );
+    }
   }
-
 }
